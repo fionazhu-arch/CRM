@@ -222,6 +222,17 @@ function initBackToDashboard() {
 // 初始化线索表单
 function initLeadForm() {
     const leadForm = document.getElementById('lead-form');
+    const stageSelect = document.getElementById('lead-stage');
+    const customStageContainer = document.getElementById('custom-stage-container');
+    
+    // 监听Stage选择变化
+    stageSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customStageContainer.style.display = 'block';
+        } else {
+            customStageContainer.style.display = 'none';
+        }
+    });
     
     leadForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -231,13 +242,22 @@ function initLeadForm() {
             return;
         }
         
+        let stage = document.getElementById('lead-stage').value;
+        if (stage === 'custom') {
+            stage = document.getElementById('lead-custom-stage').value || '自定义';
+        }
+        
         const lead = {
             id: Date.now(),
-            name: document.getElementById('lead-name').value,
-            phone: document.getElementById('lead-phone').value,
+            company: document.getElementById('lead-company').value,
+            fullName: document.getElementById('lead-full-name').value,
             email: document.getElementById('lead-email').value,
-            source: document.getElementById('lead-source').value,
-            status: document.getElementById('lead-status').value,
+            phone: document.getElementById('lead-phone').value,
+            stage: stage,
+            channel: document.getElementById('lead-channel').value,
+            campaign: document.getElementById('lead-campaign').value,
+            picSales: document.getElementById('lead-pic-sales').value,
+            country: document.getElementById('lead-country').value,
             createdAt: new Date().toISOString()
         };
         
@@ -250,6 +270,7 @@ function initLeadForm() {
         saveLeads();
         renderLeads();
         leadForm.reset();
+        customStageContainer.style.display = 'none';
     });
 }
 
@@ -300,19 +321,20 @@ function renderLeads() {
     boardLeads.forEach(lead => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${lead.name}</td>
-            <td>${lead.phone}</td>
-            <td>${lead.email}</td>
-            <td>${lead.source}</td>
-            <td><span class="status ${lead.status}">${getStatusText(lead.status)}</span></td>
+            <td>${lead.company || ''}</td>
+            <td>${lead.fullName || ''}</td>
+            <td>${lead.email || ''}</td>
+            <td>${lead.phone || ''}</td>
+            <td><span class="status ${lead.stage}">${lead.stage || ''}</span></td>
+            <td>${lead.channel || ''}</td>
+            <td>${lead.campaign || ''}</td>
+            <td>${lead.picSales || ''}</td>
+            <td>${lead.country || ''}</td>
             <td>${formatDate(lead.createdAt)}</td>
             <td>
                 <div class="action-buttons">
                     <button onclick="editLead(${lead.id})" class="btn">编辑</button>
                     <button onclick="deleteLead(${lead.id})" class="btn btn-danger">删除</button>
-                    <button onclick="updateLeadStatus(${lead.id}, 'contacted')" class="btn">已联系</button>
-                    <button onclick="updateLeadStatus(${lead.id}, 'qualified')" class="btn">已 qualify</button>
-                    <button onclick="updateLeadStatus(${lead.id}, 'closed')" class="btn btn-danger">关闭</button>
                 </div>
             </td>
         `;
@@ -393,11 +415,37 @@ function editLead(id) {
     const lead = boardLeads.find(l => l.id === id);
     
     if (lead) {
-        document.getElementById('lead-name').value = lead.name;
-        document.getElementById('lead-phone').value = lead.phone;
-        document.getElementById('lead-email').value = lead.email;
-        document.getElementById('lead-source').value = lead.source;
-        document.getElementById('lead-status').value = lead.status;
+        document.getElementById('lead-company').value = lead.company || '';
+        document.getElementById('lead-full-name').value = lead.fullName || '';
+        document.getElementById('lead-email').value = lead.email || '';
+        document.getElementById('lead-phone').value = lead.phone || '';
+        
+        // 处理Stage字段
+        const stageSelect = document.getElementById('lead-stage');
+        const customStageContainer = document.getElementById('custom-stage-container');
+        
+        // 检查lead.stage是否在预设选项中
+        let found = false;
+        for (let i = 0; i < stageSelect.options.length; i++) {
+            if (stageSelect.options[i].value === lead.stage) {
+                stageSelect.value = lead.stage;
+                customStageContainer.style.display = 'none';
+                found = true;
+                break;
+            }
+        }
+        
+        // 如果不在预设选项中，显示自定义输入框
+        if (!found) {
+            stageSelect.value = 'custom';
+            customStageContainer.style.display = 'block';
+            document.getElementById('lead-custom-stage').value = lead.stage || '';
+        }
+        
+        document.getElementById('lead-channel').value = lead.channel || '';
+        document.getElementById('lead-campaign').value = lead.campaign || '';
+        document.getElementById('lead-pic-sales').value = lead.picSales || '';
+        document.getElementById('lead-country').value = lead.country || '';
         
         // 移除原线索
         leadsByBoard[currentBoard] = boardLeads.filter(l => l.id !== id);
@@ -426,7 +474,7 @@ function updateLeadStatus(id, status) {
     const lead = boardLeads.find(l => l.id === id);
     
     if (lead) {
-        lead.status = status;
+        lead.stage = status;
         saveLeads();
         renderLeads();
     }
