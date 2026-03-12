@@ -1,9 +1,29 @@
 // 全局变量
-let leads = JSON.parse(localStorage.getItem('leads')) || [];
+let currentUser = null;
+let currentBoard = null;
+let leadsByBoard = JSON.parse(localStorage.getItem('leadsByBoard')) || {};
 let tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+
+// 权限配置
+const permissions = {
+    'ROW': ['ROW'],
+    'Oceania': ['Oceania'],
+    'EU': ['EU'],
+    'HUGH': ['HUGH'],
+    'fernando': ['fernando'],
+    'alice': ['alice'],
+    'nicklas': ['nicklas'],
+    'latam': ['latam']
+};
 
 // DOM加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
+    // 初始化登录表单
+    initLoginForm();
+    
+    // 初始化退出登录按钮
+    initLogoutButton();
+    
     // 初始化导航
     initNavigation();
     
@@ -13,12 +33,77 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化售后工单表单
     initTicketForm();
     
-    // 渲染线索列表
-    renderLeads();
+    // 初始化线索板块选择
+    initLeadBoards();
+    
+    // 初始化返回看板按钮
+    initBackToDashboard();
+    
+    // 检查是否已登录
+    checkLoginStatus();
+});
+
+// 检查登录状态
+function checkLoginStatus() {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        currentUser = savedUser;
+        showMainApp();
+    }
+}
+
+// 初始化登录表单
+function initLoginForm() {
+    const loginForm = document.getElementById('login-form');
+    
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        // 简单验证，实际项目中应该使用更安全的验证方式
+        if (username && password === '123456') {
+            currentUser = username;
+            localStorage.setItem('currentUser', currentUser);
+            showMainApp();
+        } else {
+            alert('用户名或密码错误');
+        }
+    });
+}
+
+// 初始化退出登录按钮
+function initLogoutButton() {
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+            currentUser = null;
+            currentBoard = null;
+            localStorage.removeItem('currentUser');
+            showLoginForm();
+        });
+    }
+}
+
+// 显示登录表单
+function showLoginForm() {
+    document.getElementById('login').style.display = 'block';
+    document.getElementById('main-app').style.display = 'none';
+}
+
+// 显示主应用
+function showMainApp() {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    document.getElementById('current-user').textContent = `当前用户: ${currentUser}`;
+    
+    // 渲染线索板块
+    renderLeadBoards();
     
     // 渲染工单列表
     renderTickets();
-});
+}
 
 // 初始化导航功能
 function initNavigation() {
@@ -36,9 +121,71 @@ function initNavigation() {
             // 添加活动状态
             this.classList.add('active');
             const targetSection = this.getAttribute('data-section');
-            document.getElementById(targetSection).style.display = 'block';
+            const section = document.getElementById(targetSection);
+            section.style.display = 'block';
+            
+            // 如果是线索模块，显示看板
+            if (targetSection === 'leads') {
+                document.querySelector('.leads-dashboard').style.display = 'block';
+                document.getElementById('lead-management').style.display = 'none';
+            }
         });
     });
+}
+
+// 初始化线索板块选择
+function initLeadBoards() {
+    const dashboardCards = document.querySelectorAll('.dashboard-card');
+    
+    dashboardCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const board = this.getAttribute('data-lead-board');
+            
+            // 检查权限
+            if (permissions[currentUser].includes(board)) {
+                currentBoard = board;
+                showLeadManagement(board);
+            } else {
+                alert('您没有权限访问此板块');
+            }
+        });
+    });
+}
+
+// 渲染线索板块
+function renderLeadBoards() {
+    const dashboardCards = document.querySelectorAll('.dashboard-card');
+    
+    dashboardCards.forEach(card => {
+        const board = card.getAttribute('data-lead-board');
+        if (permissions[currentUser].includes(board)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// 显示线索管理界面
+function showLeadManagement(board) {
+    document.querySelector('.leads-dashboard').style.display = 'none';
+    document.getElementById('lead-management').style.display = 'block';
+    document.getElementById('current-board-title').textContent = board;
+    
+    // 渲染当前板块的线索
+    renderLeads();
+}
+
+// 初始化返回看板按钮
+function initBackToDashboard() {
+    const backBtn = document.getElementById('back-to-dashboard');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            document.querySelector('.leads-dashboard').style.display = 'block';
+            document.getElementById('lead-management').style.display = 'none';
+            currentBoard = null;
+        });
+    }
 }
 
 // 初始化线索表单
@@ -47,6 +194,11 @@ function initLeadForm() {
     
     leadForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        if (!currentBoard) {
+            alert('请先选择线索板块');
+            return;
+        }
         
         const lead = {
             id: Date.now(),
@@ -58,7 +210,12 @@ function initLeadForm() {
             createdAt: new Date().toISOString()
         };
         
-        leads.push(lead);
+        // 确保当前板块的线索数组存在
+        if (!leadsByBoard[currentBoard]) {
+            leadsByBoard[currentBoard] = [];
+        }
+        
+        leadsByBoard[currentBoard].push(lead);
         saveLeads();
         renderLeads();
         leadForm.reset();
@@ -92,7 +249,7 @@ function initTicketForm() {
 
 // 保存线索数据到localStorage
 function saveLeads() {
-    localStorage.setItem('leads', JSON.stringify(leads));
+    localStorage.setItem('leadsByBoard', JSON.stringify(leadsByBoard));
 }
 
 // 保存工单数据到localStorage
@@ -105,7 +262,11 @@ function renderLeads() {
     const tbody = document.querySelector('#leads-table tbody');
     tbody.innerHTML = '';
     
-    leads.forEach(lead => {
+    if (!currentBoard) return;
+    
+    const boardLeads = leadsByBoard[currentBoard] || [];
+    
+    boardLeads.forEach(lead => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${lead.name}</td>
@@ -195,7 +356,11 @@ function formatDate(dateString) {
 
 // 编辑线索
 function editLead(id) {
-    const lead = leads.find(l => l.id === id);
+    if (!currentBoard) return;
+    
+    const boardLeads = leadsByBoard[currentBoard] || [];
+    const lead = boardLeads.find(l => l.id === id);
+    
     if (lead) {
         document.getElementById('lead-name').value = lead.name;
         document.getElementById('lead-phone').value = lead.phone;
@@ -204,7 +369,7 @@ function editLead(id) {
         document.getElementById('lead-status').value = lead.status;
         
         // 移除原线索
-        leads = leads.filter(l => l.id !== id);
+        leadsByBoard[currentBoard] = boardLeads.filter(l => l.id !== id);
         saveLeads();
         renderLeads();
     }
@@ -212,8 +377,11 @@ function editLead(id) {
 
 // 删除线索
 function deleteLead(id) {
+    if (!currentBoard) return;
+    
     if (confirm('确定要删除这条线索吗？')) {
-        leads = leads.filter(l => l.id !== id);
+        const boardLeads = leadsByBoard[currentBoard] || [];
+        leadsByBoard[currentBoard] = boardLeads.filter(l => l.id !== id);
         saveLeads();
         renderLeads();
     }
@@ -221,7 +389,11 @@ function deleteLead(id) {
 
 // 更新线索状态
 function updateLeadStatus(id, status) {
-    const lead = leads.find(l => l.id === id);
+    if (!currentBoard) return;
+    
+    const boardLeads = leadsByBoard[currentBoard] || [];
+    const lead = boardLeads.find(l => l.id === id);
+    
     if (lead) {
         lead.status = status;
         saveLeads();

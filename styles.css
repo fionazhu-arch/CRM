@@ -25,11 +25,25 @@ header {
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 header h1 {
     font-size: 24px;
     margin-bottom: 10px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+#current-user {
+    font-weight: bold;
 }
 
 nav ul {
@@ -52,6 +66,85 @@ nav a:hover {
 
 nav a.active {
     background-color: #3498db;
+}
+
+/* 登录界面样式 */
+.login-container {
+    max-width: 400px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+/* 线索看板样式 */
+.leads-dashboard {
+    margin-bottom: 30px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.dashboard-card {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.dashboard-card h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #34495e;
+}
+
+.dashboard-card p {
+    font-size: 14px;
+    color: #7f8c8d;
+}
+
+/* 不同板块的颜色标识 */
+.dashboard-card[data-lead-board="ROW"] {
+    border-left: 4px solid #3498db;
+}
+
+.dashboard-card[data-lead-board="Oceania"] {
+    border-left: 4px solid #2ecc71;
+}
+
+.dashboard-card[data-lead-board="EU"] {
+    border-left: 4px solid #f39c12;
+}
+
+.dashboard-card[data-lead-board="HUGH"] {
+    border-left: 4px solid #e74c3c;
+}
+
+.dashboard-card[data-lead-board="fernando"] {
+    border-left: 4px solid #9b59b6;
+}
+
+.dashboard-card[data-lead-board="alice"] {
+    border-left: 4px solid #1abc9c;
+}
+
+.dashboard-card[data-lead-board="nicklas"] {
+    border-left: 4px solid #34495e;
+}
+
+.dashboard-card[data-lead-board="latam"] {
+    border-left: 4px solid #16a085;
 }
 
 /* 主内容样式 */
