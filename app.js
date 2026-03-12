@@ -13,7 +13,8 @@ const permissions = {
     'fernando': ['fernando'],
     'alice': ['alice'],
     'nicklas': ['nicklas'],
-    'latam': ['latam']
+    'latam': ['latam'],
+    'end-users': []
 };
 
 // DOM加载完成后执行
@@ -97,6 +98,36 @@ function showMainApp() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('main-app').style.display = 'block';
     document.getElementById('current-user').textContent = `当前用户: ${currentUser}`;
+    
+    // 根据用户类型显示不同的导航选项
+    const navLinks = document.querySelectorAll('.nav-link');
+    if (currentUser === 'end-users') {
+        // 售后账号只显示售后板块
+        navLinks.forEach(link => {
+            if (link.getAttribute('data-section') === 'leads') {
+                link.style.display = 'none';
+            } else {
+                link.style.display = 'block';
+            }
+        });
+        // 直接显示售后板块
+        document.getElementById('leads').style.display = 'none';
+        document.getElementById('after-sales').style.display = 'block';
+        navLinks[1].classList.add('active');
+    } else {
+        // 销售账号只显示线索板块
+        navLinks.forEach(link => {
+            if (link.getAttribute('data-section') === 'after-sales') {
+                link.style.display = 'none';
+            } else {
+                link.style.display = 'block';
+            }
+        });
+        // 直接显示线索板块
+        document.getElementById('after-sales').style.display = 'none';
+        document.getElementById('leads').style.display = 'block';
+        navLinks[0].classList.add('active');
+    }
     
     // 渲染线索板块
     renderLeadBoards();
